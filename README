@@ -1,3 +1,7 @@
-# psmsd
 Peter's SMS gateway daemon
+
+This is a daemon (and a small CLI utility) that, together with a GSM modem, can act as a SMS gateway
+responding to commands received via SMS - and also sending out alerts to users.
+
+
 

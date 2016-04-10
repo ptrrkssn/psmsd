@@ -1,0 +1,8 @@
+#!/bin/ksh
+
+PIN=1234
+DEV=/dev/cua/b
+DIR=/etc/psmsd
+DOOR=/etc/psmsd/door
+
+exec /usr/local/sbin/psmsd -U${DIR}/users.dat -C${DIR}/commands.dat -D${DOOR} -p${PIN} -d ${DEV} >/var/log/psmsd.log 2>&1 &

@@ -41,7 +41,7 @@ strmisc.o:	strmisc.c strmisc.h
 
 
 clean distclean:
-	-rm -f  $(BINS) *.o *~ \#*
+	-rm -f  $(BINS) *.o *~ \#* */*~ */#*
 
 version:
 	@VERSION="`sed -e 's/^#define *VERSION *\"\(.*\)\"$$/\1/' <common.h`" && echo $$VERSION
