@@ -1,12 +1,29 @@
 # commands.dat
 #
 # Format: Name Level User Path Argv
-# Level: * = all levels, 0 = unknown, 1 = known (sms from known users primary phone), 2 = logged in
+#
+# Level:
+#   *    All levels
+#   0    Unknown
+#   1    Known (sms from known users primary phone as defined in users.dat)
+#   2    Logged in users (with password from users.dat)
+#
+# User (process will be executed as this user):
+#   =    Same as logged in with password or known phone no from users.dat
+#
+# Argv:
+#   %*               All arguments
+#   %n               Argument nr 'n'
+#   %{n-}            All arguments starting with 'n'
+#   %P | %{phone}    Phone number message was received from
+#   %U | %{user}     Identified user
+#   %D | %{date}     Date SMS was received
+#
 
 Finger          *       nobody	/bin/finger 	finger -fq
 Uname           *       nobody	/bin/uname 	uname -a
 Whoami          *       nobody	/bin/echo 	echo %{phone}
+Echo            1       nobody	/bin/echo 	echo %*
 Ping            2   	nobody	/usr/sbin/ping 	ping -- %1
 Run             2  	=	/bin/sh		sh -c "%*"
-Echo            1       nobody	/bin/echo 	echo %*
 Mail            2	=	/bin/mailx 	mailx -B -i -r "%{phone}@sms.example.com" -s "%{2-}" %1

@@ -26,4 +26,7 @@ extern char *
 s_ndup(const char *s,
        unsigned int len);
 
+extern char *
+s_dup(const char *s);
+
 #endif

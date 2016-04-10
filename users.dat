@@ -1,6 +1,11 @@
-# users.dat
+# users.dat - authenticated users for psmsd
 #
-# Format: user phone pass acl/commands
+# Format: user phone password commands
+#
+# Commands:
+#   *				All commands
+#   command|command|command	List of commands
+#
 
-peter	+1555123456	hello	*
-
+peter	+1555123456	hello		*
+santa   +1555123456	christmas	Wall

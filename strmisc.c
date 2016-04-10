@@ -44,3 +44,11 @@ s_ndup(const char *s,
     return rs;
 }
 
+char *
+s_dup(const char *s)
+{
+    if (!s)
+	return NULL;
+
+    return strdup(s);
+}

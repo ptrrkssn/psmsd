@@ -173,10 +173,10 @@ users_load(const char *path)
 		    "USERS_LOAD: Name=%s, Phone=%s, Pass=%s, Acl=%s\n",
 		    name, phone, pass, acl ? acl : "<none>");
 	
-	uv[uc].name = strdup(name);
-	uv[uc].pphone = strdup(phone);
-	uv[uc].pass = strdup(pass);
-	uv[uc].acl = acl ? strdup(acl) : NULL;
+	uv[uc].name = s_dup(name);
+	uv[uc].pphone = s_dup(phone);
+	uv[uc].pass = s_dup(pass);
+	uv[uc].acl = s_dup(acl);
 	
 	uv[uc].cphone = NULL;
 	uv[uc].expires = 0;
@@ -252,14 +252,14 @@ users_login(UCRED *ucp,
 	    uv[i].cphone = NULL;
 	}
 	
-	uv[i].cphone = (ucp->phone ? strdup(ucp->phone) : NULL);
+	uv[i].cphone = s_up(ucp->phone);
 	
 	if (autologout_time)
 	    uv[i].expires = now+autologout_time;
 	else
 	    uv[i].expires = 0;
 
-	ucp->name = strdup(name);
+	ucp->name = s_dup(name);
 	ucp->level = 2;
 	nm++;
     }
@@ -331,7 +331,7 @@ users_get_creds(const char *phone)
 	return NULL;
     
     memset(ucp, 0, sizeof(*ucp));
-    ucp->phone = strdup(phone);
+    ucp->phone = s_dup(phone);
     ucp->name = NULL;
     ucp->acl = NULL;
     ucp->level = 0;
@@ -342,8 +342,8 @@ users_get_creds(const char *phone)
     for (i = 0; i < uc; i++)
 	if (uv[i].cphone && strcmp(uv[i].cphone, phone) == 0)
 	{
-	    ucp->name = strdup(uv[i].name);
-	    ucp->acl = strdup(uv[i].acl);
+	    ucp->name = s_dup(uv[i].name);
+	    ucp->acl = s_dup(uv[i].acl);
 	    ucp->level = 2;
 	    if (autologout_time)
 		uv[i].expires = now+autologout_time;
@@ -356,8 +356,8 @@ users_get_creds(const char *phone)
 	for (i = 0; i < uc; i++)
 	    if (uv[i].pphone && strcmp(uv[i].pphone, phone) == 0)
 	    {
-		ucp->name = strdup(uv[i].name);
-		ucp->acl = strdup(uv[i].acl);
+		ucp->name = s_dup(uv[i].name);
+		ucp->acl = s_dup(uv[i].acl);
 		ucp->level = 1;
 		if (autologout_time)
 		    uv[i].expires = now+autologout_time;
@@ -396,9 +396,9 @@ users_name2phone(const char *name)
 	{
 	    /* Temporarily "logged in" phone number? */
 	    if (uv[i].cphone)
-		phone = strdup(uv[i].cphone);
+		phone = s_dup(uv[i].cphone);
 	    else
-		phone = strdup(uv[i].pphone);
+		phone = s_dup(uv[i].pphone);
 	    break;
 	}
     
@@ -428,7 +428,7 @@ users_valid_command(UCRED *ucp,
 	rc = 1;
     else
     {
-	acl = strdup(ucp->acl);
+	acl = s_dup(ucp->acl);
 	cp = strtok(acl, "|");
 	while (cp)
 	{
