@@ -17,14 +17,18 @@
 #include <setjmp.h>
 #include <fcntl.h>
 #include <time.h>
-#include <door.h>
 #include <pwd.h>
+
+#if HAVE_DOORS
+#include <door.h>
+#endif
 
 #include <sys/loadavg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "version.h"
 #include "serial.h"
 #include "queue.h"
 #include "gsm.h"
@@ -34,6 +38,9 @@
 #include "spawn.h"
 #include "ptime.h"
 #include "doorsms.h"
+
+
+extern char version[];
 
 
 typedef struct extcmd
@@ -1126,6 +1133,7 @@ usage(FILE *fp, char *argv0)
 	    argv0);
     fprintf(fp, "Options:\n");
     fprintf(fp, "  -h                    Display this information\n");
+    fprintf(fp, "  -V                    Print version and exit\n");
     fprintf(fp, "  -C<commands-path>     Path to commands definition file\n");
     fprintf(fp, "  -U<users-path>        Path to users definition file\n");
     fprintf(fp, "  -T<autologout-time>   Set autologout timeout\n");
@@ -1134,9 +1142,16 @@ usage(FILE *fp, char *argv0)
     fprintf(fp, "  -t                    Enable TTY reader\n");
     fprintf(fp, "  -p<pin>               SIM card PIN code\n");
     fprintf(fp, "  -F<fifo-path>         Path to fifo\n");
-    fprintf(fp, "  -D<door-path<         Path to door\n");
+    fprintf(fp, "  -D<door-path>         Path to door\n");
 }
-	
+
+void
+p_header(void)
+{
+    printf("[psmsd, version %s - Copyright (c) 2016 Peter Eriksson <pen@lysator.liu.se>]\n", VERSION);
+}
+
+
 int
 main(int argc,
      char *argv[])
@@ -1153,6 +1168,10 @@ main(int argc,
     for (i = 1; i < argc && argv[i][0] == '-'; i++)
 	switch (argv[i][1])
 	{
+	  case 'V':
+	    p_header();
+	    exit(0);
+	    
 	  case 'C':
 	    if (!argv[i][2])
 		error("Missing path argument for -C");
@@ -1230,17 +1249,22 @@ main(int argc,
 	    exit(1);
 	}
 
+    if (verbose)
+	p_header();
+
     if (i < argc)
 	serial_device = argv[i++];
     
-    if (verbose)
-	printf("[psmsd, version %s - Copyright (c) 2006 Peter Eriksson <pen@lysator.liu.se>]\n", version);
-
+    if (access(serial_device, R_OK|W_OK) < 0) {
+	fprintf(stderr, "%s: %s: %s\n", argv[0], serial_device, strerror(errno));
+	exit(1);
+    }
+    
     if (!debug)
     {
 	daemonize();
-	openlog(argv[0], LOG_NDELAY|LOG_NOWAIT, LOG_LOCAL3);
-	syslog(LOG_INFO, "Version %s started", version);
+	openlog(argv[0], LOG_NDELAY|LOG_NOWAIT|(verbose ? LOG_CONS : 0), LOG_LOCAL3);
+	syslog(LOG_INFO, "Version %s started", VERSION);
     }
     
     fd = serial_open(serial_device, serial_speed, serial_timeout);

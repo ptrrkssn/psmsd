@@ -1,5 +1,5 @@
 /*
-** smsclient - Send SMS message via psmsd daemon
+** psmsc - CLI utility to send SMS message via psmsd daemon
 **
 ** Copyright (c) 2016 Peter Eriksson <pen@lysator.liu.se>
 */
@@ -13,6 +13,11 @@
 #include <sysexits.h>
 #include <syslog.h>
 
+#if HAVE_DOORS
+#include <door.h>
+#endif
+
+#include "version.h"
 #include "doorsms.h"
 #include "buffer.h"
 #include "users.h"
@@ -33,6 +38,7 @@ usage(FILE *fp,
 	    argv0);
     fprintf(fp, "Options:\n");
     fprintf(fp, "  -h                Display this information\n");
+    fprintf(fp, "  -V                Print version and exit\n");
     fprintf(fp, "  -a                Send message to all users\n");
     fprintf(fp, "  -m                Mail mode\n");
     fprintf(fp, "  -d                Debug mode\n");
@@ -90,6 +96,12 @@ do_send(USER *up, void *xp)
 }
 
 
+void
+p_header(void)
+{
+    printf("[psmsc, version %s - Copyright (c) 2016 Peter Eriksson <pen@lysator.liu.se>]\n", VERSION);
+}
+
 int
 main(int argc,
      char *argv[])
@@ -104,6 +116,10 @@ main(int argc,
     for (i = 1; i < argc && argv[i][0] == '-'; i++)
 	switch (argv[i][1])
 	{
+	  case 'V':
+	    p_header();
+	    exit(0);
+	    
 	  case 'a':
 	    ++allflag;
 	    break;
