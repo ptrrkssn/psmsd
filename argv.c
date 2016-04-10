@@ -75,7 +75,7 @@ argv_getm(char **argv,
 	buf_puts(&buf, argv[i]);
     }
 
-    rp = strdup(buf_getall(&buf));
+    rp = s_dup(buf_getall(&buf));
     buf_clear(&buf);
     
     return rp;
@@ -214,7 +214,7 @@ argv_strtok(const char *bp,
     
     start = rp;
 
-    sp = strdup(buf_getall(&buf));
+    sp = s_dup(buf_getall(&buf));
     buf_clear(&buf);
 
     return sp;
@@ -276,10 +276,10 @@ char *my_esc_handler(const char *esc,
     printf("Parsing ESC [%s]\n", esc ? esc : "<null>");
 
     if (strcmp(esc, "P") == 0 || strcmp(esc, "phone") == 0)
-	return strdup("+46705182786");
+	return s_dup("+46705182786");
     
     if (strcmp(esc, "D") == 0 || strcmp(esc, "date") == 0)
-	return strdup("2006-11-24 13:37");
+	return s_dup("2006-11-24 13:37");
 
     return NULL;
 }

@@ -199,7 +199,7 @@ serial_write(int fd,
 const char *
 serial_strerror(int code)
 {
-    static char buf[256];
+    static char buf[1024];
 
     
     switch (code)
@@ -208,7 +208,7 @@ serial_strerror(int code)
 	return "No error";
 
       case SERIAL_E_UNIX_ERROR:
-	sprintf(buf, "Error: %s", strerror(errno));
+	snprintf(buf, sizeof(buf), "Error: %s", strerror(errno));
 	return buf;
 	    
       case SERIAL_E_INVALID_SPEED:
@@ -221,23 +221,23 @@ serial_strerror(int code)
 	return "Failed to get device lock";
 	
       case SERIAL_E_OPEN_FAILED:
-	sprintf(buf, "Device open failed: %s", strerror(errno));
+	snprintf(buf, sizeof(buf), "Device open failed: %s", strerror(errno));
 	return buf;
 	
       case SERIAL_E_GETATTR_FAILED:
-	sprintf(buf, "Failed reading device attributes: %s", strerror(errno));
+	snprintf(buf, sizeof(buf), "Failed reading device attributes: %s", strerror(errno));
 	return buf;
 	
       case SERIAL_E_SETSPEED_FAILED:
-	sprintf(buf, "Failed setting device speed: %s", strerror(errno));
+	snprintf(buf, sizeof(buf), "Failed setting device speed: %s", strerror(errno));
 	return buf;
 	
       case SERIAL_E_SETATTR_FAILED:
-	sprintf(buf, "Failed changing device attributes: %s", strerror(errno));
+	snprintf(buf, sizeof(buf), "Failed changing device attributes: %s", strerror(errno));
 	return buf;
 
       default:
-	sprintf(buf, "Unknown error (errno=%d \"%s\")",
+	snprintf(buf, sizeof(buf), "Unknown error (errno=%d \"%s\")",
 		errno, strerror(errno));
 	return buf;
     }

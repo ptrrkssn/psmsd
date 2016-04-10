@@ -24,6 +24,8 @@
 #include <ctype.h>
 
 #include "cap.h"
+#include "strmisc.h"
+
 
 int debug;
 int verbose;
@@ -127,7 +129,7 @@ cap_getstr(const char *path,
 			    retval = buf;
 			}
 			else
-			    retval = strdup(tp+3);
+			    retval = s_dup(tp+3);
 			
 			goto Exit;
 		    }

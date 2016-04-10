@@ -28,6 +28,7 @@
 #include <signal.h>
 
 #include "users.h"
+#include "strmisc.h"
 
 extern int debug;
 
@@ -252,7 +253,7 @@ users_login(UCRED *ucp,
 	    uv[i].cphone = NULL;
 	}
 	
-	uv[i].cphone = s_up(ucp->phone);
+	uv[i].cphone = s_dup(ucp->phone);
 	
 	if (autologout_time)
 	    uv[i].expires = now+autologout_time;

@@ -52,6 +52,7 @@
 #include "users.h"
 #include "spawn.h"
 #include "ptime.h"
+#include "strmisc.h"
 
 
 extern char version[];
@@ -93,7 +94,10 @@ FILE *ser_r_fp = NULL;
 FILE *ser_w_fp = NULL;
 FILE *tty_fp = NULL;
 
+#if HAVE_DOORS
 char *door_path = NULL;
+#endif
+
 char *fifo_path = NULL;
 int tty_reader = 0;
 
@@ -151,13 +155,13 @@ send_sms(const char *phone,
     if (!xp)
 	return -1;
 
-    sprintf(buf, "+CMGS=\"%s\"", phone);
-    xp->cmd = strdup(buf);
+    snprintf(buf, sizeof(buf), "+CMGS=\"%s\"", phone);
+    xp->cmd = s_dup(buf);
 
     buf[0] = '\0';
     
     latin1_to_gsm(msg, buf, sizeof(buf));
-    xp->data = strdup(buf);
+    xp->data = s_dup(buf);
     len = strlen(xp->data);
     if (len > 320)
 	xp->data[320] = 0;
@@ -250,11 +254,11 @@ ecmd_load(const char *ecmdpath)
 	if (debug > 1)
 	    fprintf(stderr, "ECMD_LOAD: Name=%s, Level=%d, Path=%s, Argv=%s\n", name, level, path, argv);
 	
-	ev[ec].name = strdup(name);
+	ev[ec].name = s_dup(name);
 	ev[ec].level = level;
-	ev[ec].user = strdup(user);
-	ev[ec].path = strdup(path);
-	ev[ec].argv  = strdup(argv);
+	ev[ec].user = s_dup(user);
+	ev[ec].path = s_dup(path);
+	ev[ec].argv  = s_dup(argv);
 	++ec;
     }
 
@@ -339,10 +343,7 @@ ecmd_esc_handler(const char *esc,
 	    rv = argv_getm(ep->argv, start, 0);
     }
 
-    if (rv)
-	return strdup(rv);
-
-    return NULL;
+    return s_dup(rv);
 }
 
 
@@ -397,8 +398,8 @@ ecmd_run(UCRED *ucp,
     }
 	
     cmd_argv = argv_create(ev[i].argv, ecmd_esc_handler, (void *) &edata);
-    path = strdup(ev[i].path);
-    user = strdup(ev[i].user);
+    path = s_dup(ev[i].path);
+    user = s_dup(ev[i].user);
     
     pthread_mutex_unlock(&ecmd_mtx);
 
@@ -528,8 +529,8 @@ read_sms(int id)
     if (!xp)
 	return -1;
 
-    sprintf(buf, "+CMGR=%u", id);
-    xp->cmd = strdup(buf);
+    snprintf(buf, sizeof(buf), "+CMGR=%u", id);
+    xp->cmd = s_dup(buf);
     xp->data = NULL;
     xp->ack = NULL;
     xp->misc = NULL;
@@ -548,8 +549,8 @@ list_sms(char *type)
     if (!xp)
 	return -1;
 
-    sprintf(buf, "+CMGL=\"%s\"", type);
-    xp->cmd = strdup(buf);
+    snprintf(buf, sizeof(buf), "+CMGL=\"%s\"", type);
+    xp->cmd = s_dup(buf);
     xp->data = NULL;
     xp->ack = NULL;
     xp->misc = NULL;
@@ -569,8 +570,8 @@ select_charset(char *type)
     if (!xp)
 	return -1;
 
-    sprintf(buf, "+CSCS=\"%s\"", type);
-    xp->cmd = strdup(buf);
+    snprintf(buf, sizeof(buf), "+CSCS=\"%s\"", type);
+    xp->cmd = s_dup(buf);
     xp->data = NULL;
     xp->ack = NULL;
     xp->misc = NULL;
@@ -588,8 +589,8 @@ send_pin(char *pin)
     if (!xp)
 	return -1;
 
-    sprintf(buf, "+CPIN=%s", pin);
-    xp->cmd = strdup(buf);
+    snprintf(buf, sizeof(buf), "+CPIN=%s", pin);
+    xp->cmd = s_dup(buf);
     xp->data = NULL;
     xp->ack = NULL;
     xp->misc = NULL;
@@ -608,8 +609,8 @@ delete_sms(int id, int mode)
     if (!xp)
 	return -1;
 
-    sprintf(buf, "+CMGD=%u,%u", id, mode);
-    xp->cmd = strdup(buf);
+    snprintf(buf, sizeof(buf), "+CMGD=%u,%u", id, mode);
+    xp->cmd = s_dup(buf);
     xp->data = NULL;
     xp->ack = NULL;
     xp->misc = NULL;
@@ -649,7 +650,7 @@ run_message(const char *msg,
     buf_init(&in);
     buf_init(&out);
 
-    cp = strdup(msg);
+    cp = s_dup(msg);
     i = strcspn(cp, "\r\n");
     if (i >= 0)
 	cp[i++] = '\0';
@@ -746,7 +747,7 @@ run_message(const char *msg,
 	double loadavg[3];
 	
 	getloadavg(loadavg, 3);
-	sprintf(tmpbuf, "%.2f/%.2f/%.2f",
+	snprintf(tmpbuf, sizeof(tmpbuf), "%.2f/%.2f/%.2f",
 		loadavg[0], loadavg[1], loadavg[2]);
 	buf_puts(&out, tmpbuf);
 	goto End;
@@ -1005,7 +1006,7 @@ fifo_read_thread(void *tap)
 }
 
 
-
+#if HAVE_DOORS
 static void
 door_servproc(void *cookie,
 	      char *dataptr,
@@ -1013,9 +1014,6 @@ door_servproc(void *cookie,
 	      door_desc_t *descptr,
 	      size_t ndesc)
 {
-#if 0
-    door_desc_t db;
-#endif
     door_cred_t cb;
     int rc = -1;
     DOORSMS *dsp;
@@ -1094,6 +1092,7 @@ door_start_server(const char *path)
     
     return 0;
 }
+#endif
 
 
 static void
@@ -1156,7 +1155,9 @@ usage(FILE *fp, char *argv0)
     fprintf(fp, "  -t                    Enable TTY reader\n");
     fprintf(fp, "  -p<pin>               SIM card PIN code\n");
     fprintf(fp, "  -F<fifo-path>         Path to fifo\n");
+#if HAVE_DOORS
     fprintf(fp, "  -D<door-path>         Path to door\n");
+#endif
 }
 
 void
@@ -1190,14 +1191,14 @@ main(int argc,
 	    if (!argv[i][2])
 		error("Missing path argument for -C");
 	    
-	    commands_path = strdup(argv[i]+2);
+	    commands_path = s_dup(argv[i]+2);
 	    break;
 	    
 	  case 'U':
 	    if (!argv[i][2])
 		error("Missing path argument for -U");
 	    
-	    userauth_path = strdup(argv[i]+2);
+	    userauth_path = s_dup(argv[i]+2);
 	    break;
 	    
 	  case 'T':
@@ -1240,19 +1241,21 @@ main(int argc,
 	    break;
 
 	  case 'p':
-	    pin = strdup(argv[i]+2);
+	    pin = s_dup(argv[i]+2);
 	    break;
 	    
 	  case 'F':
-	    fifo_path = strdup(argv[i]+2);
+	    fifo_path = s_dup(argv[i]+2);
 	    (void) mkfifo(fifo_path, 0660);
 	    /* XXX: Check for errors */
 	    break;
 	    
+#if HAVE_DOORS	    
 	  case 'D':
-	    door_path = strdup(argv[i]+2);
+	    door_path = s_dup(argv[i]+2);
 	    break;
-
+#endif
+	    
 	  case 'h':
 	    usage(stdout, argv[0]);
 	    exit(0);
@@ -1338,8 +1341,10 @@ main(int argc,
     if (fifo_path)
 	pthread_create(&t_fifo,  NULL, fifo_read_thread, (void *) fifo_path);
 
+#if HAVE_DOORS
     if (door_path)
 	door_start_server(door_path);
+#endif
     
     if (debug)
 	fprintf(stderr, "MAIN: Waiting for signals...\n");

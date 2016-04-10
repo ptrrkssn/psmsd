@@ -49,12 +49,12 @@ uucp_lockdev(int dmajor,
     
     pid = getpid();
     
-    sprintf(buf1, "/var/spool/locks/TMP.%d", pid);
+    snprintf(buf1, sizeof(buf1), "/var/spool/locks/TMP.%d", pid);
     fd = open(buf1, O_WRONLY|O_EXCL|O_CREAT, 0444);
     if (fd < 0)
 	return UUCP_E_LOCK_TMP_OPEN_FAILED;
 
-    sprintf(pidbuf, "%10d\n", pid);
+    snprintf(pidbuf, sizeof(pidbuf), "%10d\n", pid);
     if (write(fd, pidbuf, 11) != 11)
     {
 	(void) unlink(buf1);
@@ -64,7 +64,7 @@ uucp_lockdev(int dmajor,
     (void) fchown(fd, USER_UUCP, GROUP_UUCP);
     (void) close(fd);
 
-    sprintf(buf2, "/var/spool/locks/LK.%03d.%03d.%03d", dmajor, major, minor);
+    snprintf(buf2, sizeof(buf2), "/var/spool/locks/LK.%03d.%03d.%03d", dmajor, major, minor);
     for (i = 0; i < 10; i++)
     {
 	if (link(buf1, buf2) == 0)
@@ -118,7 +118,7 @@ uucp_unlockdev(int dmajor,
     char buf[1024];
     
 
-    sprintf(buf, "/var/spool/locks/LK.%03d.%03d.%03d", dmajor, major, minor);
+    snprintf(buf, sizeof(buf), "/var/spool/locks/LK.%03d.%03d.%03d", dmajor, major, minor);
 
     (void) unlink(buf);
 

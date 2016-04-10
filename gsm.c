@@ -209,9 +209,9 @@ latin1_to_gsm(const char *ls,
 	if (c != -1)
 	{
 	    if (c > 0xFF)
-		sprintf(buf+j, "%04X", c);
+		snprintf(buf+j, bufsize-j, "%04X", c);
 	    else
-		sprintf(buf+j, "%02X", c);
+		snprintf(buf+j, bufsize-j, "%02X", c);
 	    while (buf[j])
 		++j;
 	}
