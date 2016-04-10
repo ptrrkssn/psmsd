@@ -1,0 +1,6 @@
+# users.dat
+#
+# Format: user phone pass acl/commands
+
+peter	+1555123456	hello	*
+
