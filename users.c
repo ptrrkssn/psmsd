@@ -148,19 +148,21 @@ users_load(const char *path)
     
     while (fgets(buf, sizeof(buf), fp))
     {
-	name = strtok(buf, " \t\r\n");
+	char *endp;
+	
+	name = strtok_r(buf, " \t\r\n", &endp);
 	if (!name || *name == '#')
 	    continue;
 
-	phone = strtok(NULL, " \t\n\r");
+	phone = strtok_r(NULL, " \t\n\r", &endp);
 	if (!phone)
 	    continue;
 	
-	pass = strtok(NULL, " \t\n\r");
+	pass = strtok_r(NULL, " \t\n\r", &endp);
 	if (!pass)
 	    continue;
 	
-	acl = strtok(NULL, "\n\r");
+	acl = strtok_r(NULL, "\n\r", &endp);
 
 	if (acl)
 	    while (isspace(*acl))
@@ -429,8 +431,10 @@ users_valid_command(UCRED *ucp,
 	rc = 1;
     else
     {
+	char *endp;
+	
 	acl = s_dup(ucp->acl);
-	cp = strtok(acl, "|");
+	cp = strtok_r(acl, "|", &endp);
 	while (cp)
 	{
 	    if (strcasecmp(cp, command) == 0)
@@ -439,7 +443,7 @@ users_valid_command(UCRED *ucp,
 		break;
 	    }
 	    
-	    cp = strtok(NULL, "|");
+	    cp = strtok_r(NULL, "|", &endp);
 	}
 	free(acl);
     }

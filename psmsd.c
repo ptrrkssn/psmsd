@@ -86,8 +86,9 @@ int debug = 0;
 volatile int abort_threads = 0;
 int autologout_time = 0;
 
-char *serial_device = "/dev/gsm0";
-int serial_speed = 38400;
+char *serial_device = SERIAL_DEVICE;
+int serial_speed = SERIAL_SPEED;
+
 int serial_timeout = 30000;
 
 FILE *ser_r_fp = NULL;
@@ -95,10 +96,10 @@ FILE *ser_w_fp = NULL;
 FILE *tty_fp = NULL;
 
 #if HAVE_DOORS
-char *door_path = NULL;
+char *door_path = DOOR_PATH;
 #endif
 
-char *fifo_path = NULL;
+char *fifo_path = FIFO_PATH;
 int tty_reader = 0;
 
 QUEUE *q_xmit = NULL;
@@ -140,8 +141,8 @@ error(const char *msg, ...)
 
 
 int
-send_sms(const char *phone,
-	 const char *msg)
+_send_sms(const char *phone,
+	  const char *msg)
 {
     XMSG *xp;
     char buf[1024];
@@ -159,12 +160,12 @@ send_sms(const char *phone,
     xp->cmd = s_dup(buf);
 
     buf[0] = '\0';
-    
     latin1_to_gsm(msg, buf, sizeof(buf));
+    
     xp->data = s_dup(buf);
     len = strlen(xp->data);
-    if (len > 320)
-	xp->data[320] = 0;
+    if (len > MAX_SMS_MESSAGE)
+	xp->data[MAX_SMS_MESSAGE] = 0;
     
     xp->ack = NULL;
     xp->misc = NULL;
@@ -172,6 +173,39 @@ send_sms(const char *phone,
     return queue_put(q_xmit, xp);
 }
 
+
+int
+do_send(USER *up, void *xp)
+{
+    const char *msg = (const char *) xp;
+
+
+    return _send_sms(up->cphone ? up->cphone : up->pphone, msg);
+}
+
+
+int
+send_sms(const char *to,
+	 const char *msg)
+{
+    char *phone;
+
+
+    if (!to || !msg)
+	return -1;
+    
+    if (strcmp(to, "*") == 0)
+	return users_foreach(do_send, (void *) msg);
+
+    if (*to == '+' || isdigit(*to))
+	return _send_sms(to, msg);
+    
+    phone = users_name2phone(to);
+    if (!phone)
+	return -1;
+    
+    return _send_sms(phone, msg);
+}
 
 
 
@@ -212,13 +246,13 @@ ecmd_load(const char *ecmdpath)
     
     while (fgets(buf, sizeof(buf), fp))
     {
-	char *tmp;
+	char *tmp, *endp;
 	
-	name = strtok(buf, " \t\r\n");
+	name = strtok_r(buf, " \t\r\n", &endp);
 	if (!name || *name == '#')
 	    continue;
 	
-	tmp = strtok(NULL, " \t\r\n");
+	tmp = strtok_r(NULL, " \t\r\n", &endp);
 	if (!tmp)
 	    continue;
 	if (sscanf(tmp, "%u", &level) != 1)
@@ -233,15 +267,15 @@ ecmd_load(const char *ecmdpath)
 		level = 3;
 	}
 	
-	user = strtok(NULL, " \t\r\n");
+	user = strtok_r(NULL, " \t\r\n", &endp);
 	if (!user)
 	    continue;
 
-	path = strtok(NULL, " \t\r\n");
+	path = strtok_r(NULL, " \t\r\n", &endp);
 	if (!path)
 	    continue;
 
-	argv = strtok(NULL, "\r\n");
+	argv = strtok_r(NULL, "\r\n", &endp);
 	if (!argv)
 	    continue;
 
@@ -922,16 +956,16 @@ tty_read_thread(void *tap)
     
     while (fgets(buf, sizeof(buf), tty_fp) != NULL)
     {
-	char *phone, *cp;
+	char *phone, *cp, *endp;
 	
 	if (debug > 1)
 	    fprintf(stderr, "TTY RECV: %s\n", buf);
 
-	phone = strtok(buf, " \t\r\n");
+	phone = strtok_r(buf, " \t\r\n", &endp);
 	if (!phone)
 	    continue;
 
-	cp = strtok(NULL, "\n\r");
+	cp = strtok_r(NULL, "\n\r", &endp);
 	if (!cp)
 	    continue;
 
@@ -961,7 +995,7 @@ fifo_read_thread(void *tap)
     
 
     if (debug)
-	fprintf(stderr, "FIFO_READ_THREAD: Starting\n");
+	fprintf(stderr, "FIFO_READ_THREAD: Starting (fifo=%s)\n", (char *) tap);
 
     while ((fp = fopen((char *) tap, "r")) != NULL)
     {
@@ -970,16 +1004,16 @@ fifo_read_thread(void *tap)
 	
 	while (fgets(buf, sizeof(buf), fp) != NULL)
 	{
-	    char *phone, *cp;
+	    char *phone, *cp, *endp;
 	    
 	    if (debug > 1)
 		fprintf(stderr, "FIFO RECV: %s\n", buf);
 	    
-	    phone = strtok(buf, " \t\r\n");
+	    phone = strtok_r(buf, " \t\r\n", &endp);
 	    if (!phone)
 		continue;
 	    
-	    cp = strtok(NULL, "\n\r");
+	    cp = strtok_r(NULL, "\n\r", &endp);
 	    if (!cp)
 		continue;
 	    
@@ -1133,7 +1167,7 @@ daemonize(void)
 	dup2(fd, 0);
     if (fd != 1)
 	dup2(fd, 1);
-    if (fd != 2)
+    if (!debug && fd != 2)
 	dup2(fd, 2);
     if (fd > 2)
 	close(fd);
@@ -1245,14 +1279,18 @@ main(int argc,
 	    break;
 	    
 	  case 'F':
-	    fifo_path = s_dup(argv[i]+2);
-	    (void) mkfifo(fifo_path, 0660);
-	    /* XXX: Check for errors */
+	    if (argv[i][2])
+		fifo_path = s_dup(argv[i]+2);
+	    else
+		fifo_path = FIFO_PATH;
 	    break;
 	    
 #if HAVE_DOORS	    
 	  case 'D':
-	    door_path = s_dup(argv[i]+2);
+	    if (argv[i][2])
+		door_path = s_dup(argv[i]+2);
+	    else
+		door_path = DOOR_PATH;
 	    break;
 #endif
 	    
@@ -1276,13 +1314,17 @@ main(int argc,
 	fprintf(stderr, "%s: %s: %s\n", argv[0], serial_device, strerror(errno));
 	exit(1);
     }
+
+    if (fifo_path) {
+	(void) mkfifo(fifo_path, 0660);
+	/* XXX: Check for errors */
+    }
     
     if (!debug)
-    {
 	daemonize();
-	openlog(argv[0], LOG_NDELAY|LOG_NOWAIT|(verbose ? LOG_CONS : 0), LOG_LOCAL3);
-	syslog(LOG_INFO, "Version %s started", VERSION);
-    }
+    
+    openlog(argv[0], LOG_NDELAY|LOG_NOWAIT|(verbose ? LOG_CONS : 0), LOG_LOCAL3);
+    syslog(LOG_INFO, "Version %s started", VERSION);
     
     fd = serial_open(serial_device, serial_speed, serial_timeout);
     if (fd < 0)
@@ -1335,17 +1377,17 @@ main(int argc,
     
     list_sms("ALL");
     
-    if (tty_reader)
-	pthread_create(&t_tty,  NULL, tty_read_thread, NULL);
-
-    if (fifo_path)
-	pthread_create(&t_fifo,  NULL, fifo_read_thread, (void *) fifo_path);
-
 #if HAVE_DOORS
     if (door_path)
 	door_start_server(door_path);
 #endif
     
+    if (fifo_path)
+	pthread_create(&t_fifo,  NULL, fifo_read_thread, (void *) fifo_path);
+
+    if (tty_reader)
+	pthread_create(&t_tty,  NULL, tty_read_thread, NULL);
+
     if (debug)
 	fprintf(stderr, "MAIN: Waiting for signals...\n");
     

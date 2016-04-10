@@ -1,7 +1,46 @@
-Peter's SMS gateway daemon
+Peter's SMS gateway
 
-This is a daemon (and a small CLI utility) that, together with a GSM modem, can act as a SMS gateway
-responding to commands received via SMS - and also sending out alerts to users.
+Copyright (c) 2016 Peter Eriksson <pen@lysator.liu.se>
+
+This is a daemon (and a small command line utility) that, together with a
+GSM modem, can act as a SMS gateway responding to commands received via
+SMS. It can also send out notifications to users.
+
+Might be handy as a (limited) out-of-band way to verify system status,
+initiate system checks or other.
+
+The actions (sent to the gateway via SMS) that commands perform is configured
+in the "commands.dat" file. Commands received via SMS can be authenticated at
+three levels - anyone, known phone numbers or password-protected - in the
+config file "users.dat".
+
+The command line utility (psmsc) is used to send SMS notifications to users.
+
+
+INSTALLATION
+
+Edit the 'Makefile' to suit your system. Build using 'make'. Copy the built
+binaries 'psmsd' and 'psmsc' to suitable directories of your choosing. Copy the
+sample 'commands.dat' and 'users.dat' config files to some other directory.
+
+
+USAGE
+
+psmsd [<options>] <serial device>
+	-h                    Display this information
+	-V                    Print version and exit
+	-C<commands-path>     Path to commands definition file
+	-U<users-path>        Path to users definition file
+	-T<autologout-time>   Set autologout timeout
+	-d[<level>]           Set debug level
+	-v[<level>]           Set verbosity level
+	-t                    Enable TTY reader
+	-p<pin>               SIM card PIN code
+	-F<fifo-path>         Path to fifo
+	-D<door-path>         Path to door
+
+
+
 
 
 

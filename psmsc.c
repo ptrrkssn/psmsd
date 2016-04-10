@@ -34,14 +34,18 @@
 
 #include "common.h"
 #include "buffer.h"
-#include "users.h"
+#include "strmisc.h"
+
 
 int debug = 0;
 
-char *door_path = "/etc/smsd/door";
-char *users_path = "/etc/smsd/users.dat";
+char *fifo_path = FIFO_PATH;
 
+#if HAVE_DOORS
+char *door_path = DOOR_PATH;
 int door_fd = -1;
+#endif
+
 int mailmode = 0;
 
 
@@ -54,18 +58,20 @@ usage(FILE *fp,
     fprintf(fp, "Options:\n");
     fprintf(fp, "  -h                Display this information\n");
     fprintf(fp, "  -V                Print version and exit\n");
-    fprintf(fp, "  -a                Send message to all users\n");
     fprintf(fp, "  -m                Mail mode\n");
     fprintf(fp, "  -d                Debug mode\n");
-    fprintf(fp, "  -U<users-path>    Path to users definition file\n");
-    
+#if HAVE_DOORS
+    fprintf(fp, "  -D<path>          Path to door file (default: %s)\n", door_path);
+#endif
+    fprintf(fp, "  -F<path>          Path to fifo file (default: %s)\n", fifo_path);
 }
 
 
 
+#if HAVE_DOORS
 int
-send_sms(const char *pno,
-	 const char *msg)
+door_send_sms(const char *to,
+	      const char *msg)
 {
     struct door_arg da;
     DOORSMS dsp;
@@ -77,7 +83,7 @@ send_sms(const char *pno,
 	return -1;
     
     memset(&dsp, 0, sizeof(dsp));
-    strncpy(dsp.phone, pno, sizeof(dsp.phone)-1);
+    strncpy(dsp.phone, to, sizeof(dsp.phone)-1);
     strncpy(dsp.message, msg, sizeof(dsp.message)-1);
     
     memset(&da, 0, sizeof(da));
@@ -99,17 +105,33 @@ send_sms(const char *pno,
     
     return * (int *) da.data_ptr;
 }
+#endif
 
 int
-do_send(USER *up, void *xp)
+fifo_send_sms(const char *to,
+	      const char *msg)
 {
-    char *msg = (char *) xp;
+    FILE *fp;
 
+    fp = fopen(FIFO_PATH, "w");
+    if (!fp)
+	return -1;
 
-    send_sms(up->cphone ? up->cphone : up->pphone, msg);
-    return 0;
+    fprintf(fp, "%s\t%s\n", to, msg);
+    return fclose(fp);
 }
 
+int
+send_sms(const char *to,
+	 const char *msg)
+{
+#if HAVE_DOORS
+    if (door_fd > 0)
+	return door_send_sms(to, msg);
+#endif
+
+    return fifo_send_sms(to, msg);
+}
 
 void
 p_header(void)
@@ -122,11 +144,11 @@ main(int argc,
      char *argv[])
 {
     int i, rc, nerr = 0, e;
-    char *pno, *msg, *cp, *atmp;
+    char *to, *msg, *cp;
     BUFFER buf;
-    int allflag = 0;
+#if HAVE_DOORS
     struct door_info dib;
-
+#endif
     
     for (i = 1; i < argc && argv[i][0] == '-'; i++)
 	switch (argv[i][1])
@@ -134,10 +156,6 @@ main(int argc,
 	  case 'V':
 	    p_header();
 	    exit(0);
-	    
-	  case 'a':
-	    ++allflag;
-	    break;
 	    
 	  case 'm':
 	    ++mailmode;
@@ -147,12 +165,14 @@ main(int argc,
 	    ++debug;
 	    break;
 
+#if HAVE_DOORS
 	  case 'D':
 	    door_path = strdup(argv[i]+2);
 	    break;
+#endif
 	    
-	  case 'U':
-	    users_path = strdup(argv[i]+2);
+	  case 'F':
+	    fifo_path = strdup(argv[i]+2);
 	    break;
 	    
 	  case '-':
@@ -168,55 +188,58 @@ main(int argc,
 	}
 
   EndOptions:
-    if (i >= argc && !allflag)
+    if (i >= argc)
     {
 	fprintf(stderr, "%s: Missing recipient of message\n", argv[0]);
 	exit(1);
     }
-    
-    users_load(users_path);
-    
+
+#if HAVE_DOORS
     door_fd = open(door_path, O_RDONLY);
     if (door_fd < 0)
     {
 	e = errno;
-	syslog(LOG_ERR, "%s: open: %s\n", door_path, strerror(e));
-	fprintf(stderr, "%s: open(%s): %s\n", argv[0], door_path, strerror(e));
-	exit(1);
+	if (errno != ENOENT) {
+	    syslog(LOG_ERR, "%s: open: %s\n", door_path, strerror(e));
+	    fprintf(stderr, "%s: open(%s): %s\n", argv[0], door_path, strerror(e));
+	    exit(1);
+	}
     }
 
-
-    if (door_info(door_fd, &dib) < 0)
-    {
-	e = errno;
-	syslog(LOG_ERR, "%s: door_info: %s\n", door_path, strerror(e));
-	fprintf(stderr, "%s: %s: door_info: %s\n", argv[0], door_path, strerror(e));
-	exit(1);
-    }
-    
-    if (debug)
-    {
-	printf("door_info() -> server pid = %ld, uniquifier = %ld",
-	       (long) dib.di_target,
-	       (long) dib.di_uniquifier);
+    if (door_fd > 0) {
+	if (door_info(door_fd, &dib) < 0)
+	{
+	    e = errno;
+	    syslog(LOG_ERR, "%s: door_info: %s\n", door_path, strerror(e));
+	    fprintf(stderr, "%s: %s: door_info: %s\n", argv[0], door_path, strerror(e));
+	    exit(1);
+	}
 	
-	if (dib.di_attributes & DOOR_LOCAL)
-	    printf(", LOCAL");
-	if (dib.di_attributes & DOOR_PRIVATE)
-	    printf(", PRIVATE");
+	if (debug)
+	{
+	    printf("door_info() -> server pid = %ld, uniquifier = %ld",
+		   (long) dib.di_target,
+		   (long) dib.di_uniquifier);
+	    
+	    if (dib.di_attributes & DOOR_LOCAL)
+		printf(", LOCAL");
+	    if (dib.di_attributes & DOOR_PRIVATE)
+		printf(", PRIVATE");
+	    if (dib.di_attributes & DOOR_REVOKED)
+		printf(", REVOKED");
+	    if (dib.di_attributes & DOOR_UNREF)
+		printf(", UNREF");
+	    putchar('\n');
+	}
+	
 	if (dib.di_attributes & DOOR_REVOKED)
-	    printf(", REVOKED");
-	if (dib.di_attributes & DOOR_UNREF)
-	    printf(", UNREF");
-	putchar('\n');
+	{
+	    syslog(LOG_ERR, "%s: door revoked\n", door_path);
+	    fprintf(stderr, "%s: door revoked\n", argv[0]);
+	    exit(1);
+	}
     }
-
-    if (dib.di_attributes & DOOR_REVOKED)
-    {
-	syslog(LOG_ERR, "%s: door revoked\n", door_path);
-	fprintf(stderr, "%s: door revoked\n", argv[0]);
-	exit(1);
-    }
+#endif
 
     if (isatty(fileno(stdin)))
 	puts("Enter message:");
@@ -243,36 +266,29 @@ main(int argc,
 	}
     }
 
-    if (allflag)
-	users_foreach(do_send, msg);
-    else
-	while (i < argc)
-	{
-	    atmp = strdup(argv[i]);
-	    cp = strchr(atmp, '@');
-	    if (cp)
-		*cp = '\0';
-	    
-	    pno = users_name2phone(atmp);
-	    if (!pno)
-	    {
-		if (mailmode)
-		    exit(EX_NOUSER);
-		
-		pno = atmp;
-	    }
-
-	    rc = send_sms(pno, msg);
-	    if (rc != 0)
-	    {
-		++nerr;
-		e = errno;
-		syslog(LOG_ERR, "%s: send failed (door_path=%s, rc=%d): %s", argv[i], door_path, strerror(e));
-		fprintf(stderr, "%s: %s: send failed (rc=%d): %s\n", argv[0], argv[i], rc, strerror(e));
-	    }
-	    
-	    ++i;
+    while (i < argc)
+    {
+	to = s_dup(argv[i]);
+	if (!to) {
+	    fprintf(stderr, "%s: %s: s_dup: %s\n", argv[0], argv[i], strerror(errno));
+	    exit(1);
 	}
+	    
+	cp = strchr(to, '@');
+	if (cp)
+	    *cp = '\0';
+	
+	rc = send_sms(to, msg);
+	if (rc != 0)
+	{
+	    ++nerr;
+	    e = errno;
+	    syslog(LOG_ERR, "%s: send failed (door_path=%s, rc=%d): %s", argv[i], door_path, strerror(e));
+	    fprintf(stderr, "%s: %s: send failed (rc=%d): %s\n", argv[0], argv[i], rc, strerror(e));
+	}
+	
+	++i;
+    }
     
     exit(nerr);
 }

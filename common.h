@@ -24,7 +24,18 @@
 
 #define VERSION "1.0.0"
 
+
+#define MAX_SMS_MESSAGE 320
+
+#define SERIAL_DEVICE "/dev/gsm0"
+#define SERIAL_SPEED  38400
+
+#define FIFO_PATH "/etc/psmsd/fifo"
+
+
 #if HAVE_DOORS
+
+#define DOOR_PATH "/etc/psmsd/door"
 
 typedef struct doorsms
 {
