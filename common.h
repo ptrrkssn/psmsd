@@ -1,7 +1,7 @@
 /*
-** cap.c - Capabilities file parsing stuff (termcap, /etc/remote etc...)
+** common.h - Common definitions used by both psmsd & psmsc
 **
-** Copyright (c) 2002 Peter Eriksson <pen@lysator.liu.se>
+** Copyright (c) 2016 Peter Eriksson <pen@lysator.liu.se>
 **
 ** This file is part of psmsd.
 **
@@ -19,25 +19,19 @@
 ** along with psmsd.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CAP_H
-#define CAP_H
+#ifndef PSMS_H
+#define PSMS_H 1
 
-extern int
-cap_getent(FILE *fp,
-	   char *buf,
-	   int bufsize);
+#define VERSION "1.0.0"
 
-extern char *
-cap_getstr(const char *path,
-	   const char *entname,
-	   const char *strname,
-	   char *buf,
-	   int bufsize);
+#if HAVE_DOORS
 
-extern int
-cap_getint(const char *path,
-	   const char *entname,
-	   const char *strname,
-	   int *val);
+typedef struct doorsms
+{
+    char phone[64];
+    char message[192];
+} DOORSMS;
+
+#endif
 
 #endif

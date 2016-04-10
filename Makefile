@@ -1,6 +1,6 @@
 # Makefile for psmsd
 
-SOLARIS_CFLAGS= -D_POSIX_PTHREAD_SEMANTICS -DHAVE_DOORS=1
+SOLARIS_CFLAGS=-D_POSIX_PTHREAD_SEMANTICS -DHAVE_DOORS=1
 LINUX_CFLAGS=
 
 CC=gcc
@@ -24,8 +24,8 @@ psmsc:		$(COBJS)
 		$(CC) -o psmsc $(COBJS) -ldoor
 
 
-psmsd.o:	psmsd.c version.h serial.h queue.h gsm.h argv.h buffer.h users.h spawn.h ptime.h doorsms.h
-psmsc.o:	psmsc.c version.h doorsms.h buffer.h users.h
+psmsd.o:	psmsd.c common.h serial.h queue.h gsm.h argv.h buffer.h users.h spawn.h ptime.h
+psmsc.o:	psmsc.c common.h buffer.h users.h
 
 gsm.o:		gsm.c gsm.h
 serial.o:	serial.c serial.h
@@ -43,4 +43,5 @@ strmisc.o:	strmisc.c strmisc.h
 clean distclean:
 	-rm -f  $(BINS) *.o *~ \#*
 
-
+version:
+	@VERSION="`sed -e 's/^#define *VERSION *\"\(.*\)\"$$/\1/' <common.h`" && echo $$VERSION
