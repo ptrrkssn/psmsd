@@ -34,7 +34,7 @@
 #ifndef PSMS_H
 #define PSMS_H 1
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.1"
 
 
 #define MAX_SMS_MESSAGE 320
