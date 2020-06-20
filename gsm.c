@@ -1,23 +1,35 @@
 /*
-** gsm.c - GSM character set handling routines
-**
-** Copyright (c) 2016 Peter Eriksson <pen@lysator.liu.se>
-**
-** This file is part of psmsd.
-**
-** psmsd is free software: you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation, either version 3 of the License, or
-** (at your option) any later version.
-** 
-** psmsd is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public License
-** along with psmsd.  If not, see <http://www.gnu.org/licenses/>.
-*/
+* gsm.c - GSM character set handling routines
+*
+* Copyright (c) 2016-2020 Peter Eriksson <pen@lysator.liu.se>
+ *
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,34 +44,34 @@ static struct {
 } gsmtab[] =
     {
 	{ '@', 0x00 },
-	{ '£', 0x01 },
+	{ '£', 0x01 }, /* 0xA3 */
 	{ '$', 0x02 },
-	{ '¥', 0x03 },
-	{ 'è', 0x04 },
-	{ 'é', 0x05 },
-	{ 'ù', 0x06 },
-	{ 'ì', 0x07 },
-	{ 'ò', 0x08 },
-	{ 'Ç', 0x09 },
-	{ 10,  0x0A },
-	{ 'Ø', 0x0B },
-	{ 'ø', 0x0C },
-	{ 13,  0x0D },
-	{ 'Å', 0x0E },
-	{ 'å', 0x0F },
+	{ '¥', 0x03 }, /* 0xA5 */
+	{ 'è', 0x04 }, /* 0xE8 */
+	{ 'é', 0x05 }, /* 0xE9 */
+	{ 'ù', 0x06 }, /* 0xF9 */
+	{ 'ì', 0x07 }, /* 0xEC */
+	{ 'ò', 0x08 }, /* 0xF2 */
+	{ 'Ç', 0x09 }, /* 0xC7 */
+	{ 10,  0x0A }, /* 0x0A */
+	{ 'Ø', 0x0B }, /* 0xD8 */
+	{ 'ø', 0x0C }, /* 0xF8 */
+	{ 13,  0x0D }, /* 0x0D */
+	{ 'Å', 0x0E }, /* 0xC5 */
+	{ 'å', 0x0F }, /* 0xE5 */
 
 	{ '_', 0x11 },
 	
-	{ 'Æ', 0x1C },
-	{ 'æ', 0x1D },
+	{ 'Æ', 0x1C }, /* 0xC6 */
+	{ 'æ', 0x1D }, /* 0xE6 */
 	
-	{ 'É', 0x1F },
+	{ 'É', 0x1F }, /* 0xC9 */
 
 	{ ' ', 0x20 },
 	{ '!', 0x21 },
 	{ '"', 0x22 },
 	{ '#', 0x23 },
-	{ '¤', 0x24 },
+	{ '¤', 0x24 }, /* 0xA4 */
 	{ '%', 0x25 },
 	{ '&', 0x26 },
 	{ '\'',0x27 },
@@ -87,7 +99,7 @@ static struct {
 	{ '=', 0x3d },
 	{ '>', 0x3e },
 	{ '?', 0x3f },
-	{ '¡', 0x40 },
+	{ '¡', 0x40 }, /* 0xA1 */
 	{ 'A', 0x41 },
 	{ 'B', 0x42 },
 	{ 'C', 0x43 },
@@ -114,11 +126,11 @@ static struct {
 	{ 'X', 0x58 },
 	{ 'Y', 0x59 },
 	{ 'Z', 0x5a },
-	{ 'Ä', 0x5b },
-	{ 'Ö', 0x5c },
-	{ 'Ñ', 0x5d },
-	{ 'Ü', 0x5e },
-	{ '§', 0x5f },
+	{ 'Ä', 0x5b }, /* 0xC4 */
+	{ 'Ö', 0x5c }, /* 0xD6 */
+	{ 'Ñ', 0x5d }, /* 0xD1 */
+	{ 'Ü', 0x5e }, /* 0xDC */
+	{ '§', 0x5f }, /* 0xA7 */
 
 	{ 'a', 0x61 },
 	{ 'b', 0x62 },
@@ -146,13 +158,13 @@ static struct {
 	{ 'x', 0x78 },
 	{ 'y', 0x79 },
 	{ 'z', 0x7a },
-	{ 'ä', 0x7b },
-	{ 'ö', 0x7c },
-	{ 'ñ', 0x7d },
-	{ 'ü', 0x7e },
-	{ 'à', 0x7f },
+	{ 'ä', 0x7b }, /* 0xE4 */
+	{ 'ö', 0x7c }, /* 0xF6 */
+	{ 'ñ', 0x7d }, /* 0xF1 */
+	{ 'ü', 0x7e }, /* 0xFC */
+	{ 'à', 0x7f }, /* 0xE0 */
 
-	{ '§', 0x1B65 },
+	{ '§', 0x1B65 },  /* 0xA7 */
 	{ 12,  0x1B0A },
 	{ '[', 0x1B3C },
 	{ '\\' , 0x1B2F },

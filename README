@@ -1,6 +1,6 @@
 Peter's SMS gateway
 
-Copyright (c) 2016 Peter Eriksson <pen@lysator.liu.se>
+Copyright (c) 2016-2020 Peter Eriksson <pen@lysator.liu.se>
 
 This is a daemon (and a small command line utility) that, together with a
 GSM modem, can act as a SMS gateway responding to commands received via
@@ -27,19 +27,26 @@ sample 'commands.dat' and 'users.dat' config files to some other directory.
 USAGE
 
 psmsd [<options>] <serial device>
-	-h                    Display this information
-	-V                    Print version and exit
-	-C<commands-path>     Path to commands definition file
-	-U<users-path>        Path to users definition file
-	-T<autologout-time>   Set autologout timeout
-	-d[<level>]           Set debug level
-	-v[<level>]           Set verbosity level
-	-t                    Enable TTY reader
-	-p<pin>               SIM card PIN code
-	-F<fifo-path>         Path to fifo
-	-D<door-path>         Path to door
+  -h                    Display this information
+  -V                    Print version and exit
+  -C<commands-path>     Path to commands definition file
+  -U<users-path>        Path to users definition file
+  -T<autologout-time>   Set autologout timeout
+  -d[<level>]           Set debug level
+  -v[<level>]           Set verbosity level
+  -t                    Enable TTY reader
+  -p<pin>               SIM card PIN code
+  -F<fifo-path>         Path to fifo
+  -D<door-path>         Path to door
 
 
+psmsc [<options>] [<user-1> [.. <user-N>]]
+  -h                    Display this information
+  -V                    Print version and exit
+  -m                    Mail mode
+  -d                    Debug mode
+  -D<path>              Path to door file (default: /etc/psmsd/door)
+  -F<path>              Path to fifo file (default: /etc/psmsd/fifo)
 
 
 
