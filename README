@@ -16,6 +16,10 @@ config file "users.dat".
 
 The command line utility (psmsc) is used to send SMS notifications to users.
 
+BUGS
+
+Only handles ASCII and ISO8859-1 (Latin1). No support for UTF-8 currently.
+
 
 INSTALLATION
 
@@ -47,7 +51,3 @@ psmsc [<options>] [<user-1> [.. <user-N>]]
   -d                    Debug mode
   -D<path>              Path to door file (default: /etc/psmsd/door)
   -F<path>              Path to fifo file (default: /etc/psmsd/fifo)
-
-
-
-

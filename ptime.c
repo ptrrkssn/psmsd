@@ -41,7 +41,7 @@ int
 time_get(const char *str,
 	 double *t)
 {
-    char c1, c2;
+    unsigned char c1, c2;
     int rc;
 
 
@@ -74,7 +74,7 @@ time_get(const char *str,
 	    break;
 
 	  case 'u':
-	  case 'µ':
+	  case 0xB5: /* Latin-1 "micro" */
 	    *t /= 1000000.0;
 	    break;
 
@@ -98,7 +98,7 @@ time_unit(double t)
     if (t > 60)
 	return "m";
     if (t < 0.0001)
-	return "µs";
+	return "us";
     if (t < 0.1)
 	return "ms";
     return "s";

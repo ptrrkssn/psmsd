@@ -4,7 +4,7 @@ SOLARIS_CFLAGS=-D_POSIX_PTHREAD_SEMANTICS -DHAVE_DOORS=1
 LINUX_CFLAGS=
 
 CC=gcc
-CFLAGS=-O -g -Wall $(SOLARIS_CFLAGS)
+CFLAGS=-O2 -g -Wall $(SOLARIS_CFLAGS)
 
 
 BINS=psmsd psmsc
@@ -45,3 +45,7 @@ clean distclean:
 
 version:
 	@VERSION="`sed -e 's/^#define *VERSION *\"\(.*\)\"$$/\1/' <common.h`" && echo $$VERSION
+
+
+push:	clean
+	git add -A && git commit -a && git push
