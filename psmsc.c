@@ -36,7 +36,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-#include <door.h>
+#include <unistd.h>
 #include <sysexits.h>
 #include <syslog.h>
 
@@ -295,7 +295,7 @@ main(int argc,
 	{
 	    ++nerr;
 	    e = errno;
-	    syslog(LOG_ERR, "%s: send failed (door_path=%s, rc=%d): %s", argv[i], door_path, strerror(e));
+	    syslog(LOG_ERR, "%s: send failed (rc=%d): %s", argv[i], rc, strerror(e));
 	    fprintf(stderr, "%s: %s: send failed (rc=%d): %s\n", argv[0], argv[i], rc, strerror(e));
 	}
 	

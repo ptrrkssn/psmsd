@@ -50,7 +50,10 @@
 #include <door.h>
 #endif
 
+#if HAVE_LOADAVG
 #include <sys/loadavg.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -678,6 +681,16 @@ cmd_users(USER *up, void *xp)
     }
     return 0;
 }
+
+#if !HAVE_LOADAVG
+int
+getloadavg(double lav[],
+           int nlav) {
+  errno = ENOSYS;
+  return -1;
+}
+#endif
+
 int
 run_message(const char *msg,
 	    const char *phone,
@@ -792,11 +805,14 @@ run_message(const char *msg,
     {
 	double loadavg[3];
 	
-	getloadavg(loadavg, 3);
-	snprintf(tmpbuf, sizeof(tmpbuf), "%.2f/%.2f/%.2f",
-		loadavg[0], loadavg[1], loadavg[2]);
-	buf_puts(&out, tmpbuf);
-	goto End;
+	if (getloadavg(loadavg, 3) < 0)
+          buf_puts(&out, "No load averages");
+        else {
+          snprintf(tmpbuf, sizeof(tmpbuf), "%.2f/%.2f/%.2f",
+                   loadavg[0], loadavg[1], loadavg[2]);
+          buf_puts(&out, tmpbuf);
+        }
+        goto End;
     }
 
     if (ucp->level > 0 && strcasecmp(argv[0], "Users") == 0)
@@ -1051,6 +1067,14 @@ fifo_read_thread(void *tap)
     return NULL;
 }
 
+
+#if !HAVE_CLOSEFROM
+void
+closefrom(int fd) {
+  while (fd < 256)
+    close(fd++);
+}
+#endif
 
 #if HAVE_DOORS
 static void

@@ -35,12 +35,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <grp.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
 #include "spawn.h"
 
-
+#if !HAVE_CLOSEFROM
+extern void
+closefrom(int fd);
+#endif
 
 int
 spawn(const char *path,

@@ -38,7 +38,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
+#if 0
 #include <sys/mkdev.h>
+#else
+#include <sys/sysmacros.h>
+#endif
 
 #include "uucp.h"
 

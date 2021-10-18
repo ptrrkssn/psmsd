@@ -1,10 +1,15 @@
 # Makefile for psmsd
 
-SOLARIS_CFLAGS=-D_POSIX_PTHREAD_SEMANTICS -DHAVE_DOORS=1
+SOLARIS_CFLAGS=-D_POSIX_PTHREAD_SEMANTICS -DHAVE_DOORS=1 -DHAVE_LOADAVG=1 -DHAVE_CLOSEFROM=1
+SOLARIS_LIBS=-lsocket -lpthread -ldoor
+
 LINUX_CFLAGS=
+LINUX_LIBS=-lpthread
+
+LIBS=$(LINUX_LIBS)
 
 CC=gcc
-CFLAGS=-O2 -g -Wall $(SOLARIS_CFLAGS)
+CFLAGS=-O2 -g -Wall $(LINUX_CFLAGS)
 
 
 BINS=psmsd psmsc
@@ -18,10 +23,10 @@ all:		$(BINS)
 
 
 psmsd:		$(DOBJS)
-		$(CC) -o psmsd $(DOBJS) -lsocket -lpthread -ldoor
+		$(CC) -o psmsd $(DOBJS) -lpthread $(LIBS)
 
 psmsc:		$(COBJS)
-		$(CC) -o psmsc $(COBJS) -ldoor
+		$(CC) -o psmsc $(COBJS) $(LIBS)
 
 
 psmsd.o:	psmsd.c common.h serial.h queue.h gsm.h argv.h buffer.h users.h spawn.h ptime.h

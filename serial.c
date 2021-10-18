@@ -41,7 +41,9 @@
 
 #include <poll.h>
 #include <sys/ioctl.h>
+#if 0
 #include <sys/filio.h>
+#endif
 #include <sys/stat.h>
 
 #include <sys/types.h>
@@ -78,11 +80,17 @@ static struct
     { 19200, B19200 },
     { 38400, B38400 },
     { 57600, B57600 },
+#ifdef B76800
     { 76800, B76800 },
+#endif
     { 115200, B115200 },
+#ifdef B153600
     { 153600, B153600 },
+#endif
     { 230400, B230400 },
+#ifdef B307200
     { 307200, B307200 },
+#endif
     { 460800, B460800 },
     { -1, -1 }
 };
@@ -351,7 +359,9 @@ serial_open(const char *devname,
 	tiob.c_cflag &= ~PARENB;   /* No parity */
 	tiob.c_cflag &= ~CLOCAL;   /* Modem control */
 	tiob.c_cflag |= CRTSCTS;   /* Flow control - outgoing*/
+#ifdef CRTSXOFF
 	tiob.c_cflag |= CRTSXOFF;  /* Flow control - incoming */
+#endif
 
 	tiob.c_iflag &= ~BRKINT;
 	tiob.c_iflag |= ISTRIP;
