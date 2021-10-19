@@ -8,8 +8,8 @@ LINUX_LIBS=-lpthread
 
 LIBS=$(LINUX_LIBS)
 
-CC=gcc
-CFLAGS=-O2 -g -Wall $(LINUX_CFLAGS)
+CC=gcc -pthread
+CFLAGS=-g -Wall $(LINUX_CFLAGS)
 
 
 BINS=psmsd psmsc

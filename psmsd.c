@@ -981,7 +981,10 @@ tty_read_thread(void *tap)
 
     if (debug)
 	fprintf(stderr, "TTY_READ_THREAD: Starting\n");
-    
+
+    if (!tty_fp)
+      tty_fp = stdin;
+      
     while (fgets(buf, sizeof(buf), tty_fp) != NULL)
     {
 	char *phone, *cp, *endp;
